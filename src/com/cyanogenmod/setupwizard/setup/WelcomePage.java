@@ -33,6 +33,7 @@ import com.cyanogenmod.setupwizard.R;
 import com.cyanogenmod.setupwizard.cmstats.SetupStats;
 import com.cyanogenmod.setupwizard.ui.LocalePicker;
 import com.cyanogenmod.setupwizard.ui.SetupPageFragment;
+import com.cyanogenmod.setupwizard.util.SetupWizardUtils;
 
 import java.util.Locale;
 
@@ -41,6 +42,7 @@ public class WelcomePage extends SetupPage {
     public static final String TAG = "WelcomePage";
 
     private static final String ACTION_EMERGENCY_DIAL = "com.android.phone.EmergencyDialer.DIAL";
+    private static final String CONNECT_INPUT_ACTION = "com.google.android.intent.action.CONNECT_INPUT";
 
     public WelcomePage(Context context, SetupDataCallbacks callbacks) {
         super(context, callbacks);
@@ -114,10 +116,21 @@ public class WelcomePage extends SetupPage {
         protected void initializePage() {
             mLanguagePicker = (LocalePicker) mRootView.findViewById(R.id.locale_list);
             loadLanguages();
+            connectInput();
             final boolean brandedDevice = getResources().getBoolean(
                     R.bool.branded_device);
             if (brandedDevice) {
                 mRootView.findViewById(R.id.powered_by_logo).setVisibility(View.VISIBLE);
+            }
+        }
+
+        private void connectInput() {
+            if (SetupWizardUtils.hasLeanback(getActivity().getApplicationContext())) {
+                Intent connectinputIntent = new Intent();
+                connectinputIntent.setComponent(SetupWizardUtils.mTvAddAccessorySettingsActivity);
+                connectinputIntent.setAction(CONNECT_INPUT_ACTION);
+                connectinputIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(connectinputIntent);
             }
         }
 
