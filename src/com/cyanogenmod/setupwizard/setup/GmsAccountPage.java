@@ -133,7 +133,7 @@ public class GmsAccountPage extends SetupPage {
             handleResult(requestCode, resultCode);
             setHidden(true);
         }
-        return true;
+        return super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override

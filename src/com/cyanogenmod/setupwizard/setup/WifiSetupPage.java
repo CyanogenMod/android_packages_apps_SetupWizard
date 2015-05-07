@@ -174,10 +174,8 @@ public class WifiSetupPage extends SetupPage {
                         SetupStats.Label.CAPTIVE_PORTAL_LOGIN, "success");
                 getCallbacks().onNextPage();
             }
-        }  else {
-            return false;
         }
-        return true;
+        return super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void checkForCaptivePortal() {
