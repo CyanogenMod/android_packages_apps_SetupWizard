@@ -16,6 +16,12 @@
 
 package com.cyanogenmod.setupwizard.setup;
 
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.app.Activity;
+import android.app.ActivityOptions;
+import android.app.AppGlobals;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
@@ -23,10 +29,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.transition.Slide;
 import android.transition.Transition;
+import android.util.Log;
 import android.view.Gravity;
 
 import com.cyanogenmod.setupwizard.R;
+import com.cyanogenmod.setupwizard.SetupWizardApp;
 import com.cyanogenmod.setupwizard.cmstats.SetupStats;
+import com.cyanogenmod.setupwizard.util.SetupWizardUtils;
 
 
 public abstract class SetupPage implements Page {
@@ -56,7 +65,11 @@ public abstract class SetupPage implements Page {
 
     @Override
     public int getNextButtonTitleResId() {
-        return R.string.next;
+        if (isLocked()) {
+            return R.string.setup_unlock;
+        } else {
+            return R.string.next;
+        }
     }
 
     @Override
@@ -75,7 +88,9 @@ public abstract class SetupPage implements Page {
     @Override
     public void doLoadAction(FragmentManager fragmentManager, int action) {
         Fragment fragment = getFragment(fragmentManager, action);
-        if (action == Page.ACTION_NEXT) {
+        if (!WelcomePage.TAG.equals(getKey()) && isLocked()) {
+            confirmCyanogenCredentials(fragment);
+        } else if (action == Page.ACTION_NEXT) {
             SetupStats.addEvent(SetupStats.Categories.BUTTON_CLICK,
                     SetupStats.Action.NEXT_BUTTON, getKey(),
                     String.valueOf(System.currentTimeMillis()));
@@ -98,6 +113,13 @@ public abstract class SetupPage implements Page {
 
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == SetupWizardApp.REQUEST_CODE_UNLOCK) {
+            if (resultCode == Activity.RESULT_OK) {
+                ((SetupWizardApp) AppGlobals.getInitialApplication()).setIsAuthorized(true);
+                getCallbacks().onNextPage();
+                return true;
+            }
+        }
         return false;
     }
 
@@ -136,5 +158,43 @@ public abstract class SetupPage implements Page {
 
     public SetupDataCallbacks getCallbacks() {
         return mCallbacks;
+    }
+
+    protected boolean isLocked() {
+        boolean isAuthorized = ((SetupWizardApp) AppGlobals.getInitialApplication()).isAuthorized();
+        if (SetupWizardUtils.isDeviceLocked()) {
+            return !isAuthorized;
+        }
+        return false;
+    }
+
+    private void confirmCyanogenCredentials(final Fragment fragment) {
+        AccountManager accountManager = AccountManager.get(mContext);
+        accountManager.editProperties(SetupWizardApp.ACCOUNT_TYPE_CYANOGEN, null,
+                new AccountManagerCallback<Bundle>() {
+                    public void run(AccountManagerFuture<Bundle> f) {
+                        try {
+                            Bundle b = f.getResult();
+                            ActivityOptions options =
+                                    ActivityOptions.makeCustomAnimation(mContext,
+                                            android.R.anim.fade_in,
+                                            android.R.anim.fade_out);
+                            SetupStats
+                                    .addEvent(SetupStats.Categories.EXTERNAL_PAGE_LOAD,
+                                            SetupStats.Action.EXTERNAL_PAGE_LAUNCH,
+                                            SetupStats.Label.PAGE,
+                                            SetupStats.Label.CYANOGEN_ACCOUNT);
+                            Intent i = b.getParcelable(AccountManager.KEY_INTENT);
+                            i.putExtra(SetupWizardApp.EXTRA_FIRST_RUN, true);
+                            i.putExtra(SetupWizardApp.EXTRA_SHOW_BUTTON_BAR, true);
+                            i.putExtra(SetupWizardApp.EXTRA_USE_IMMERSIVE, true);
+                            i.putExtra(SetupWizardApp.EXTRA_LOGIN_FOR_KILL_SWITCH, true);
+                            fragment.startActivityForResult(i,
+                                    SetupWizardApp.REQUEST_CODE_UNLOCK, options.toBundle());
+                        } catch (Throwable t) {
+                            Log.e(getKey(), "confirmCredentials failed", t);
+                        }
+                    }
+                }, null);
     }
 }

@@ -16,15 +16,11 @@
 
 package com.cyanogenmod.setupwizard.setup;
 
-import android.app.Activity;
 import android.app.ActivityOptions;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.provider.Settings;
-import android.util.Log;
 
 import com.cyanogenmod.setupwizard.R;
 import com.cyanogenmod.setupwizard.SetupWizardApp;
@@ -32,11 +28,6 @@ import com.cyanogenmod.setupwizard.cmstats.SetupStats;
 import com.cyanogenmod.setupwizard.ui.LoadingFragment;
 import com.cyanogenmod.setupwizard.ui.SetupPageFragment;
 import com.cyanogenmod.setupwizard.util.SetupWizardUtils;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 public class BluetoothSetupPage extends SetupPage {
 
@@ -95,10 +86,8 @@ public class BluetoothSetupPage extends SetupPage {
                     SetupStats.Action.EXTERNAL_PAGE_RESULT,
                     SetupStats.Label.BLUETOOTH_SETUP, "success");
             getCallbacks().onNextPage();
-        }  else {
-            return false;
         }
-        return true;
+        return super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void launchConnectInput() {

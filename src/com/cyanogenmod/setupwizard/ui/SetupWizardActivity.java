@@ -18,6 +18,7 @@ package com.cyanogenmod.setupwizard.ui;
 
 import android.animation.Animator;
 import android.app.Activity;
+import android.app.AppGlobals;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.Intent;
@@ -227,6 +228,11 @@ public class SetupWizardActivity extends Activity implements SetupDataCallbacks,
     @Override
     public void onPageTreeChanged() {
         updateButtonBar();
+    }
+
+    private boolean canProceed() {
+        boolean isAuthorized = ((SetupWizardApp) AppGlobals.getInitialApplication()).isAuthorized();
+        return !SetupWizardUtils.isDeviceLocked() || isAuthorized;
     }
 
     private void enableButtonBar(boolean enabled) {
