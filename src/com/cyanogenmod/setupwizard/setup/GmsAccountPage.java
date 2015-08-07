@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.service.persistentdata.PersistentDataBlockManager;
 import android.util.Log;
 
 import com.cyanogenmod.setupwizard.R;
@@ -202,14 +203,17 @@ public class GmsAccountPage extends SetupPage {
             // XXX: In open source, we don't know what gms version a user has.
             // Bail if the restore activity is not found.
         }
-        getCallbacks().onNextPage();
     }
 
     private void launchGmsAccountSetup() {
         Bundle bundle = new Bundle();
+        final PersistentDataBlockManager pdbManager = (PersistentDataBlockManager)
+                mContext.getSystemService(Context.PERSISTENT_DATA_BLOCK_SERVICE);
+        final boolean canSkip = pdbManager == null
+                || pdbManager.getOemUnlockEnabled();
         bundle.putBoolean(SetupWizardApp.EXTRA_FIRST_RUN, true);
-        bundle.putBoolean(SetupWizardApp.EXTRA_ALLOW_SKIP, true);
-        bundle.putBoolean(SetupWizardApp.EXTRA_USE_IMMERSIVE, true);
+        bundle.putBoolean(SetupWizardApp.EXTRA_ALLOW_SKIP, canSkip);
+        bundle.putBoolean(SetupWizardApp.EXTRA_USE_IMMERSIVE, false);
         AccountManager
                 .get(mContext).addAccount(SetupWizardApp.ACCOUNT_TYPE_GMS, null, null,
                 bundle, null, new AccountManagerCallback<Bundle>() {
@@ -237,7 +241,7 @@ public class GmsAccountPage extends SetupPage {
                             Log.e(TAG, "Error launching gms account", e);
                             error = true;
                         } finally {
-                            if (error && getCallbacks().
+                            if (canSkip && error && getCallbacks().
                                     isCurrentPage(GmsAccountPage.this)) {
                                 getCallbacks().onNextPage();
                             }
