@@ -238,8 +238,7 @@ public class GmsAccountPage extends SetupPage {
     public boolean canSkip() {
         final PersistentDataBlockManager pdbManager = (PersistentDataBlockManager)
                 mContext.getSystemService(Context.PERSISTENT_DATA_BLOCK_SERVICE);
-        return pdbManager == null
-                || pdbManager.getDataBlockSize() == 0
+        return pdbManager.getDataBlockSize() != -1
                 || pdbManager.getOemUnlockEnabled();
     }
 
